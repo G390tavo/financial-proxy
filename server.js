@@ -1,29 +1,30 @@
-const express = require("express");
-const cors = require("cors");
-const fetch = require("node-fetch");
+// server.js
+
+const express = require('express');
+const cors = require('cors');
+const fetch = require('node-fetch');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
+// Habilitar CORS para todos los orígenes
 app.use(cors());
 
-app.get("/", (req, res) => {
-  res.send("Proxy activo y funcionando.");
-});
+app.get('/', async (req, res) => {
+  const targetUrl = req.query.url;
 
-app.get("/?url=", async (req, res) => {
-  const url = req.query.url;
-
-  if (!url) {
-    return res.status(400).send("Falta el parámetro 'url'");
+  if (!targetUrl) {
+    return res.status(400).send('URL faltante');
   }
 
   try {
-    const response = await fetch(url);
-    const text = await response.text();
-    res.send(text);
-  } catch (err) {
-    res.status(500).send("Error al intentar acceder a la URL.");
+    const response = await fetch(targetUrl);
+    const html = await response.text();
+    res.set('Content-Type', 'text/html');
+    res.send(html);
+  } catch (error) {
+    console.error('Error al obtener la URL:', error);
+    res.status(500).send('Error al obtener la URL');
   }
 });
 
