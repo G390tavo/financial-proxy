@@ -1,49 +1,50 @@
 const express = require('express');
 const cors = require('cors');
-const fetch = require('node-fetch');
+const axios = require('axios');
 const app = express();
+
 const PORT = process.env.PORT || 10000;
 
-// Middleware para permitir CORS desde cualquier origen
-app.use(cors());
+// === Seguridad y control ===
+const ALLOWED_DOMAINS = ['google.com', 'bing.com', 'yahoo.com', 'duckduckgo.com', 'coingecko.com', 'coinmarketcap.com', 'investing.com', 'finance.yahoo.com'];
 
-// Endpoint principal del proxy
+app.use(cors()); // Permitir a todos (puedes personalizar si deseas)
+app.use(express.json());
+
 app.get('/', async (req, res) => {
-  const targetUrl = req.query.url;
-
-  if (!targetUrl) {
-    return res.status(400).send('Error: Falta el parámetro ?url');
-  }
-
   try {
-    const response = await fetch(targetUrl, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'Pragma': 'no-cache',
-        'Upgrade-Insecure-Requests': '1',
-        'DNT': '1'  // Do Not Track
-      }
-    });
+    const targetUrl = decodeURIComponent(req.query.url || '');
 
-    // Si no responde bien, reenviamos el error con el código
-    if (!response.ok) {
-      return res.status(response.status).send(`Error al acceder al recurso (${response.status})`);
+    if (!targetUrl.startsWith('http')) {
+      return res.status(400).send('URL inválida');
     }
 
-    const html = await response.text();
-    res.setHeader('Content-Type', 'text/html; charset=UTF-8');
-    res.status(200).send(html);
+    const parsedDomain = new URL(targetUrl).hostname;
+    const permitido = ALLOWED_DOMAINS.some(domain => parsedDomain.includes(domain));
+
+    if (!permitido) {
+      return res.status(403).send('Acceso denegado a este dominio');
+    }
+
+    const response = await axios.get(targetUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        'Referer': 'https://www.google.com/',
+        'Accept-Language': 'es-PE,es;q=0.9',
+      },
+      timeout: 8000,
+    });
+
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Content-Type', 'text/html; charset=UTF-8');
+    res.status(200).send(response.data);
+
   } catch (error) {
-    res.status(500).send('Error interno del proxy: ' + error.message);
+    console.error('[Proxy Error]', error.message);
+    res.status(500).send('Error al obtener contenido');
   }
 });
 
-// Iniciar servidor
 app.listen(PORT, () => {
   console.log(`Proxy activo en puerto ${PORT}`);
 });
