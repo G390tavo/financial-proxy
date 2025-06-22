@@ -1,17 +1,15 @@
 {
   "name": "financial-proxy",
   "version": "1.0.0",
-  "description": "Proxy web para evitar CORS y obtener contenido HTML desde Google, Bing, DuckDuckGo, etc.",
+  "description": "Proxy seguro para FinancialStatus",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "keywords": ["proxy", "scraping", "cors", "node", "render"],
-  "author": "G390tavo",
-  "license": "MIT",
   "dependencies": {
-    "express": "^4.19.2",
-    "node-fetch": "^2.6.9"
+    "axios": "^1.6.8",
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
   },
   "engines": {
     "node": ">=18.0.0"
